@@ -27,15 +27,6 @@ jobs:
         run: npm run build-mac
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cd assets/icon.iconset
-          iconutil -c icns ../icon.icns
-          cd ../..
-
-      - name: Build macOS app
-        run: npm run build-mac
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
