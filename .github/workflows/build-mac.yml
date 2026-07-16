@@ -20,6 +20,14 @@ jobs:
 
       - name: Generate .icns icon
         run: |
+          iconutil -c icns assets/icon.iconset
+          mv icon.icns assets/
+
+      - name: Build macOS app
+        run: npm run build-mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
           cd assets/icon.iconset
           iconutil -c icns ../icon.icns
           cd ../..
