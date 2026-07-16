@@ -679,3 +679,17 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createMainWindow();
+  } else {
+    BrowserWindow.getAllWindows().forEach(win => {
+      if (win.isMinimized()) win.restore();
+      win.show();
+      win.focus();
+    });
+  }
+});
+  if (process.platform !== 'darwin') app.quit();
+});
