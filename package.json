@@ -26,8 +26,7 @@
       "preload.js",
       "data/**/*",
       "assets/**/*",
-      "renderer/**/*",
-      "node_modules/**/*"
+      "renderer/**/*"
     ],
     "win": {
       "target": "nsis",
@@ -44,9 +43,7 @@
       "target": ["dmg", "zip"],
       "icon": "assets/icon.png",
       "category": "public.app-category.productivity",
-      "hardenedRuntime": false,
-      "gatekeeperAssess": false,
-      "identity": null
+      "identity": false
     },
     "dmg": {
       "title": "雨札 ${version}",
