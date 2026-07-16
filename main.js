@@ -255,6 +255,7 @@ function createMainWindow() {
 
   mainWindow.on('close', () => {
     saveWindowConfig(mainWindow);
+    mainWindow = null;
   });
 }
 
@@ -681,13 +682,11 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createMainWindow();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
   } else {
-    BrowserWindow.getAllWindows().forEach(win => {
-      if (win.isMinimized()) win.restore();
-      win.show();
-      win.focus();
-    });
+    createMainWindow();
   }
 });
