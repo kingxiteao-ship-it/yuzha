@@ -1,0 +1,42 @@
+name: Build macOS DMG
+
+on:
+  workflow_dispatch:  # 手动触发
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate .icns icon
+        run: |
+          cd assets/icon.iconset
+          iconutil -c icns ../icon.icns
+          cd ../..
+
+      - name: Build macOS app
+        run: npm run build-mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yuzha-macos-dmg
+          path: dist/*.dmg
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yuzha-macos-zip
+          path: dist/*.zip

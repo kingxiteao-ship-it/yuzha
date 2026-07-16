@@ -1,0 +1,13 @@
+[
+  {
+    "id": "wf1",
+    "project": "示例项目A",
+    "cargo": "样品x50件",
+    "status": "运输中",
+    "company": "顺丰速运",
+    "trackingNo": "SF1234567890",
+    "shipDate": "2026-07-01",
+    "createdAt": "2026-07-11T10:45:26.504Z",
+    "updatedAt": "2026-07-11T10:45:26.504Z"
+  }
+]

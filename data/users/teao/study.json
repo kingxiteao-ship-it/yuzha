@@ -1,0 +1,17 @@
+[
+  {
+    "id": "mrjc9ozta7ve8",
+    "category": "服务器",
+    "tags": "NIC Teaming（网卡组合）的主备模式（Active/Standby）",
+    "content": "Windows Server-NIC Teaming 配置方法",
+    "links": [
+      {
+        "url": "https://iknow.lenovo.com.cn/app/detail/176038",
+        "remark": "NIC teaming 网卡冗余"
+      }
+    ],
+    "attachments": [],
+    "createdAt": "2026-07-13T14:49:58.217Z",
+    "updatedAt": "2026-07-13T14:49:58.217Z"
+  }
+]

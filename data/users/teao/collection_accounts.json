@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ca1",
+    "type": "邮箱",
+    "account": "user@example.com",
+    "password": "",
+    "remark": "工作邮箱",
+    "createdAt": "2026-07-12T16:51:59.538Z",
+    "updatedAt": "2026-07-12T16:51:59.538Z"
+  },
+  {
+    "id": "ca2",
+    "type": "服务器",
+    "account": "root@192.168.1.100",
+    "password": "******",
+    "remark": "测试服务器",
+    "createdAt": "2026-07-12T16:51:59.538Z",
+    "updatedAt": "2026-07-12T16:51:59.538Z"
+  }
+]

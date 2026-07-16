@@ -1,0 +1,314 @@
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const path = require('path');
+const fs = require('fs');
+
+const DATA_DIR = path.join(__dirname, 'data');
+const CONFIG_PATH = path.join(__dirname, 'config.json');
+
+// 确保数据目录存在
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// ========== 窗口配置（记忆窗口位置和大小）==========
+function loadWindowConfig() {
+  try {
+    if (fs.existsSync(CONFIG_PATH)) {
+      return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
+    }
+  } catch (e) {}
+  return { width: 1280, height: 800 };
+}
+
+function saveWindowConfig(win) {
+  try {
+    const bounds = win.getNormalBounds();
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify({
+      width: bounds.width, height: bounds.height,
+      x: bounds.x, y: bounds.y,
+      maximized: win.isMaximized()
+    }, null, 2), 'utf-8');
+  } catch (e) {}
+}
+
+// ========== 数据文件 ==========
+const DATA_FILES = {
+  'work-todo': path.join(DATA_DIR, 'work_todo.json'),
+  'work-done': path.join(DATA_DIR, 'work_done.json'),
+  'work-notes': path.join(DATA_DIR, 'work_notes.json'),
+  'work-project': path.join(DATA_DIR, 'work_project.json'),
+  'work-freight': path.join(DATA_DIR, 'work_freight.json'),
+  work: path.join(DATA_DIR, 'work.json'),
+  life: path.join(DATA_DIR, 'life.json'),
+  memorial: path.join(DATA_DIR, 'memorial.json'),
+  password: path.join(DATA_DIR, 'password.json')
+};
+
+// 默认初始数据
+const DEFAULT_DATA = {
+  'work-todo': [
+    { id: 'wt1', project: '示例项目A', task: '合同审核', contact: '张三', createDate: '2026-07-01', dueDate: '2026-07-15', status: '待办', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'wt2', project: '示例项目B', task: '样品寄送', contact: '李四', createDate: '2026-07-05', dueDate: '2026-07-20', status: '进行中', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'wt3', project: '示例项目C', task: '报价确认', contact: '王五', createDate: '2026-07-10', dueDate: '2026-07-12', status: '延期', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  ],
+  'work-done': [
+    { id: 'wd1', project: '示例项目A', task: '需求确认', contact: '张三', createDate: '2026-06-01', dueDate: '2026-06-10', completedDate: '2026-06-09', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'wd2', project: '示例项目B', task: '方案设计', contact: '李四', createDate: '2026-06-05', dueDate: '2026-06-20', completedDate: '2026-06-18', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  ],
+  'work-notes': [
+    { id: 'wn1', project: '示例项目A', note: '今日与张三确认了合同条款，需要修改付款方式部分。\n\n客户要求在30%预付的基础上，增加验收后付款条款。', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'wn2', project: '示例项目B', note: '样品测试反馈：材质需要更换为更环保的版本。\n\n客户强调必须通过SGS检测，建议提前准备相关文件。', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  ],
+  'work-project': [
+    { id: 'wp1', project: '示例项目A', name: '张三', position: '采购经理', phone: '138-1234-5678', address: '北京市朝阳区XX路XX号', remark: '主要对接人，决策流程较快', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'wp2', project: '示例项目A', name: '赵六', position: '技术主管', phone: '139-8765-4321', address: '北京市海淀区XX路XX号', remark: '负责技术评审', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'wp3', project: '示例项目B', name: '李四', position: '项目经理', phone: '137-9999-8888', address: '上海市浦东新区XX路XX号', remark: '需要每月汇报进度', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  ],
+  'work-freight': [
+    { id: 'wf1', project: '示例项目A', cargo: '样品x50件', status: '运输中', company: '顺丰速运', trackingNo: 'SF1234567890', shipDate: '2026-07-01', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'wf2', project: '示例项目B', cargo: '样品x30件', status: '已送达', company: '中通快递', trackingNo: 'ZT9876543210', shipDate: '2026-06-28', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  ],
+  work: [
+    { id: 'w1', title: '项目进度', content: '当前要务与里程碑\n\n记录当前正在进行的工作任务和进度安排，设置关键节点提醒。\n\n- 第一阶段：需求分析与设计\n- 第二阶段：核心功能开发\n- 第三阶段：测试与优化\n- 第四阶段：上线部署', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'w2', title: '会议纪要', content: '笔墨记录 · 行动项\n\n会议时间：2026年7月\n参会人员：项目组成员\n\n会议要点：\n1. 确定下一阶段目标\n2. 分配任务到个人\n3. 设定验收标准\n\n行动项：\n- [ ] 完成原型设计\n- [ ] 编写技术文档\n- [ ] 准备演示材料', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'w3', title: '灵感备忘', content: '灵光一现 · 随手珍藏\n\n突然想到的几个创意方向：\n\n1. 将传统水墨风格与现代交互设计结合\n2. 加入语音备忘功能，用方言记录生活点滴\n3. 自动生成诗词配文的图文排版\n4. 设置节气提醒，在每个节气推送相关诗词', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  ],
+  life: [
+    { id: 'l1', title: '今日待办', content: '起居日常 · 闲情雅趣\n\n\u2610 早晨浇花\n\u2610 去超市买菜\n\u2610 取快递\n\u2610 整理书桌\n\u2610 泡一壶茶\n\u2610 读半小时书\n\n备注：记得买龙井茶叶', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'l2', title: '心情日记', content: '记录今日心境与感悟\n\n今日天气：晴转多云\n\n今天是一个安静的日子。窗外的蝉鸣声此起彼伏，倒也不觉得聒噪，反而像是一首夏日的背景乐。泡了一壶铁观音，茶香袅袅，思绪也随之飘远。\n\n想起王维的诗句：行到水穷处，坐看云起时。人生的许多时候，正是在看似无路可走的地方，反而能发现新的风景。', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'l3', title: '周末计划', content: '周末雅集 · 茶叙时光\n\n周六：\n- 上午：去书店逛逛\n- 下午：约朋友茶叙\n- 晚上：整理读书笔记\n\n周日：\n- 上午：公园散步\n- 下午：学习新技能\n- 晚上：早休息', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  ],
+  memorial: [
+    { id: 'm1', title: '初夏记忆', content: '光影流年 · 珍藏此刻\n\n2026年7月的某个午后，阳光透过窗帘的缝隙洒在书桌上，光影斑驳。翻开一本旧相册，那些泛黄的照片唤起了许多回忆。\n\n想起了小时候在外婆家度过的夏天，蝉鸣、西瓜、摇椅，还有外婆手中的蒲扇。那时候没有空调，但似乎比现在更凉爽。', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'm2', title: '重要纪念日', content: '重要时刻 · 铭记于心\n\n- 生日：每年的这一天\n- 毕业纪念日\n- 第一次独立完成项目\n- 与好友相识的日子\n\n每一个值得纪念的日子，都是生命中的里程碑。用笔墨记录下这些时刻，让回忆永不褪色。', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'm3', title: '旅行足迹', content: '行万里路 · 留一世忆\n\n已去过的地方：\n\n- 杭州西湖：断桥残雪，平湖秋月\n- 苏州园林：一步一景，曲径通幽\n- 成都：天府之国，美食之都\n- 西安：古都风韵，历史厚重\n\n下一站：\n- 云南大理：风花雪月\n- 桂林山水：甲天下', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  ],
+  password: [
+    { id: 'p1', title: '常用网站账号', content: '各类账号 · 安全存储\n\n网站名称：示例网站\n账号：user@example.com\n密码：[请在此记录密码]\n备注：主要工作邮箱\n\n---\n\n网站名称：另一网站\n账号：username\n密码：[请在此记录密码]\n备注：个人博客账号', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'p2', title: '密钥管理', content: '重要密钥 · 分级保护\n\n密钥名称：API密钥\n密钥内容：[请在此记录密钥]\n\n使用场景：开发接口调用\n\n---\n\n密钥名称：数据库密码\n密钥内容：[请在此记录密码]\n\n使用场景：本地数据库连接', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'p3', title: '密码安全提示', content: '双重验证 · 加固防护\n\n安全建议：\n\n1. 不同网站使用不同的密码\n2. 定期更换重要账户的密码\n3. 开启双重验证（2FA）\n4. 不在公共设备上保存密码\n5. 使用密码管理器生成强密码\n\n密码生成规则：\n- 至少12位字符\n- 包含大小写字母、数字和特殊符号\n- 避免使用个人信息', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  ]
+};
+
+// 初始化数据文件
+function initDataFile(key) {
+  if (!fs.existsSync(DATA_FILES[key])) {
+    fs.writeFileSync(DATA_FILES[key], JSON.stringify(DEFAULT_DATA[key], null, 2), 'utf-8');
+  }
+}
+
+Object.keys(DATA_FILES).forEach(initDataFile);
+
+// ========== Splash 加载窗口 ==========
+let splashWindow = null;
+let mainWindow = null;
+
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 480, height: 320,
+    frame: false,
+    transparent: false,
+    alwaysOnTop: true,
+    center: true,
+    resizable: false,
+    movable: false,
+    skipTaskbar: true,
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: false,
+      sandbox: false
+    }
+  });
+
+  splashWindow.loadFile(path.join(__dirname, 'renderer', 'splash.html'));
+
+  splashWindow.once('ready-to-show', () => {
+    splashWindow.show();
+  });
+}
+
+// ========== 主窗口 ==========
+function createMainWindow() {
+  const cfg = loadWindowConfig();
+  mainWindow = new BrowserWindow({
+    width: cfg.width || 1280,
+    height: cfg.height || 800,
+    x: cfg.x,
+    y: cfg.y,
+    minWidth: 900,
+    minHeight: 600,
+    title: '涛笺',
+    show: false,
+    icon: path.join(__dirname, 'assets', 'icon.ico'),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
+    }
+  });
+
+  if (cfg.maximized) {
+    mainWindow.maximize();
+  }
+
+  mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
+  mainWindow.once('ready-to-show', () => {
+    // 主窗口准备好后，先关闭 splash 再显示主窗口
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+      splashWindow = null;
+    }
+    mainWindow.show();
+    mainWindow.focus();
+  });
+
+  // 窗口关闭前保存状态
+  mainWindow.on('close', () => {
+    saveWindowConfig(mainWindow);
+  });
+
+  // 开发模式打开 DevTools
+  // mainWindow.webContents.openDevTools();
+}
+
+// ========== IPC 处理 ==========
+
+// 读取数据
+ipcMain.handle('data:read', async (_, category) => {
+  try {
+    const filePath = DATA_FILES[category];
+    if (!fs.existsSync(filePath)) {
+      initDataFile(category);
+    }
+    const data = fs.readFileSync(filePath, 'utf-8');
+    return { success: true, data: JSON.parse(data) };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 写入数据（替换整个文件）
+ipcMain.handle('data:write', async (_, category, items) => {
+  try {
+    const filePath = DATA_FILES[category];
+    fs.writeFileSync(filePath, JSON.stringify(items, null, 2), 'utf-8');
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 保存单条（新增或更新）
+ipcMain.handle('data:save', async (_, category, item) => {
+  try {
+    const filePath = DATA_FILES[category];
+    let items = [];
+    if (fs.existsSync(filePath)) {
+      items = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    }
+    const now = new Date().toISOString();
+    if (item.id) {
+      const idx = items.findIndex(i => i.id === item.id);
+      if (idx >= 0) {
+        items[idx] = { ...items[idx], ...item, updatedAt: now };
+      } else {
+        items.push({ ...item, createdAt: now, updatedAt: now });
+      }
+    } else {
+      item.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+      items.unshift({ ...item, createdAt: now, updatedAt: now });
+    }
+    fs.writeFileSync(filePath, JSON.stringify(items, null, 2), 'utf-8');
+    return { success: true, data: items };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 删除单条
+ipcMain.handle('data:delete', async (_, category, id) => {
+  try {
+    const filePath = DATA_FILES[category];
+    let items = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    items = items.filter(i => i.id !== id);
+    fs.writeFileSync(filePath, JSON.stringify(items, null, 2), 'utf-8');
+    return { success: true, data: items };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 导出数据
+ipcMain.handle('data:export', async (_, category) => {
+  try {
+    const { filePath } = await dialog.showSaveDialog({
+      defaultPath: `${category}_backup_${new Date().toISOString().slice(0,10)}.json`,
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+    if (!filePath) return { success: false, cancelled: true };
+    const data = fs.readFileSync(DATA_FILES[category], 'utf-8');
+    fs.writeFileSync(filePath, data, 'utf-8');
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 导入数据
+ipcMain.handle('data:import', async (_, category) => {
+  try {
+    const { filePaths } = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+    if (!filePaths || filePaths.length === 0) return { success: false, cancelled: true };
+    const importData = fs.readFileSync(filePaths[0], 'utf-8');
+    const parsed = JSON.parse(importData);
+    if (!Array.isArray(parsed)) {
+      return { success: false, error: '导入文件格式不正确，应为 JSON 数组' };
+    }
+    const now = new Date().toISOString();
+    const normalized = parsed.map(item => ({
+      id: item.id || Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+      title: item.title || '未命名',
+      content: item.content || '',
+      createdAt: item.createdAt || now,
+      updatedAt: item.updatedAt || now
+    }));
+    fs.writeFileSync(DATA_FILES[category], JSON.stringify(normalized, null, 2), 'utf-8');
+    return { success: true, data: normalized };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 草稿
+const drafts = new Map();
+ipcMain.handle('draft:save', async (_, category, item) => {
+  drafts.set(`${category}_draft`, item);
+  return { success: true };
+});
+ipcMain.handle('draft:read', async (_, category) => {
+  const draft = drafts.get(`${category}_draft`);
+  return { success: true, data: draft || null };
+});
+ipcMain.handle('draft:clear', async (_, category) => {
+  drafts.delete(`${category}_draft`);
+  return { success: true };
+});
+
+// ========== App 生命周期 ==========
+app.whenReady().then(() => {
+  createSplashWindow();
+  // 延迟创建主窗口，让 splash 显示一会儿
+  setTimeout(() => {
+    createMainWindow();
+  }, 1500);
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});

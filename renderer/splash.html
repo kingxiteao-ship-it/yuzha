@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雨札 - 加载中</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #1a2028;
+    overflow: hidden;
+    font-family: "Noto Serif SC", "SimSun", "宋体", serif;
+    display: flex; align-items: center; justify-content: center;
+  }
+  
+  .splash-container {
+    position: relative;
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: linear-gradient(180deg, #1a2028 0%, #222a34 30%, #2a323c 60%, #303a44 100%);
+  }
+  .splash-container::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(20,20,25,0.5) 0%, rgba(15,15,20,0.65) 50%, rgba(10,10,15,0.8) 100%);
+    z-index: 1;
+  }
+  
+  .splash-content {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+  }
+  
+  .splash-icon {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #f0f4f8 0%, #dde4ec 50%, #cdd4dc 100%);
+    border: 2px solid rgba(106, 138, 158, 0.6);
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Ma Shan Zheng", "KaiTi", serif;
+    font-size: 40px; color: #2a3038;
+    margin-bottom: 28px;
+    box-shadow: 0 0 40px rgba(106, 138, 158, 0.3), 0 4px 20px rgba(0,0,0,0.3);
+    animation: iconPulse 2s ease-in-out infinite;
+  }
+  @keyframes iconPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(106, 138, 158, 0.3); }
+    50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(106, 138, 158, 0.5); }
+  }
+  
+  .splash-title {
+    font-family: "Liu Jian Mao Cao", "KaiTi", cursive;
+    font-size: 48px; font-weight: 400;
+    letter-spacing: 16px; padding-left: 16px;
+    color: rgba(235, 238, 242, 0.95);
+    text-shadow: 0 2px 20px rgba(0,0,0,0.5), 0 0 40px rgba(100, 140, 160, 0.2);
+    margin-bottom: 8px;
+    animation: titleFadeIn 1.5s ease-out forwards;
+    opacity: 0;
+  }
+  @keyframes titleFadeIn {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  
+  .splash-sub {
+    font-size: 14px; color: rgba(200, 210, 220, 0.55);
+    letter-spacing: 6px;
+    animation: subFadeIn 1.5s ease-out 0.5s forwards;
+    opacity: 0;
+    margin-bottom: 40px;
+  }
+  @keyframes subFadeIn {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 0.55; transform: translateY(0); }
+  }
+  
+  .splash-loader {
+    width: 160px; height: 2px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 1px;
+    overflow: hidden;
+    position: relative;
+  }
+  .splash-loader::after {
+    content: ''; position: absolute; top: 0; left: -40%;
+    width: 40%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(106, 138, 158, 0.8), transparent);
+    border-radius: 1px;
+    animation: loaderSlide 1.5s ease-in-out infinite;
+  }
+  @keyframes loaderSlide {
+    0% { left: -40%; }
+    100% { left: 100%; }
+  }
+  
+  .splash-hint {
+    font-size: 11px; color: rgba(200, 210, 220, 0.3);
+    letter-spacing: 3px; margin-top: 16px;
+    animation: hintFadeIn 1.5s ease-out 0.8s forwards;
+    opacity: 0;
+  }
+  @keyframes hintFadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 0.3; }
+  }
+  
+  .mountain-bottom {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 25%; pointer-events: none; z-index: 2;
+  }
+  .m-sil {
+    position: absolute; bottom: 0; border-radius: 100% 100% 0 0;
+  }
+  .m-sil:nth-child(1) { left: -5%; width: 50%; height: 60%; background: linear-gradient(to top, rgba(180,165,140,0.3) 10%, transparent); }
+  .m-sil:nth-child(2) { left: 30%; width: 60%; height: 50%; background: linear-gradient(to top, rgba(165,150,125,0.25) 5%, transparent); }
+  .m-sil:nth-child(3) { left: 50%; width: 55%; height: 65%; background: linear-gradient(to top, rgba(175,160,135,0.3) 20%, transparent); }
+</style>
+</head>
+<body>
+<div class="splash-container">
+  <div class="mountain-bottom">
+    <div class="m-sil"></div>
+    <div class="m-sil"></div>
+    <div class="m-sil"></div>
+  </div>
+  <div class="splash-content">
+    <div class="splash-icon">雨</div>
+    <div class="splash-title">雨札</div>
+    <div class="splash-sub">雨落生花，墨染流年</div>
+    <div class="splash-loader"></div>
+    <div class="splash-hint">雨落如丝，墨染流年...</div>
+  </div>
+</div>
+<script>
+  // 接收主进程消息关闭 splash
+  window.electronAPI = {
+    onReady: (cb) => { window._onReady = cb; }
+  };
+  
+  // 如果没有在 8 秒内收到关闭消息，自动关闭（防止卡死）
+  setTimeout(() => {
+    if (window._onReady) window._onReady();
+  }, 8000);
+</script>
+</body>
+</html>
