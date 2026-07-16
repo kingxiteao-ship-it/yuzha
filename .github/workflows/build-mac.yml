@@ -20,8 +20,10 @@ jobs:
 
       - name: Generate .icns icon
         run: |
-          iconutil -c icns assets/icon.iconset
-          mv icon.icns assets/
+          cd assets
+          iconutil -c icns icon.iconset
+          ls -la icon.icns
+          cd ..
 
       - name: Build macOS app
         run: npm run build-mac
