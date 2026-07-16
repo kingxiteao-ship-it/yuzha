@@ -691,5 +691,3 @@ app.on('activate', () => {
     });
   }
 });
-  if (process.platform !== 'darwin') app.quit();
-});
