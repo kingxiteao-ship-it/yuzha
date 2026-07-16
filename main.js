@@ -3,9 +3,10 @@ const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 
-const DATA_DIR = path.join(__dirname, 'data');
+const BASE_DIR = app.isPackaged ? app.getPath('userData') : __dirname;
+const DATA_DIR = path.join(BASE_DIR, 'data');
 const ATTACH_DIR = path.join(DATA_DIR, 'attachments', 'study');
-const CONFIG_PATH = path.join(__dirname, 'config.json');
+const CONFIG_PATH = path.join(BASE_DIR, 'config.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const COLUMN_PREFS_FILE = path.join(DATA_DIR, 'column_prefs.json');
 let currentUser = null;
@@ -594,6 +595,39 @@ ipcMain.handle('column:load', async () => {
   }
 });
 
+// ========== 数据迁移（打包后从 asar 复制到可写目录）==========
+function migrateDataFromAsar() {
+  if (!app.isPackaged) return;
+  const source = path.join(__dirname, 'data');
+  const dest = DATA_DIR;
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+  try {
+    const items = fs.readdirSync(source);
+    items.forEach(item => {
+      const srcPath = path.join(source, item);
+      const destPath = path.join(dest, item);
+      const stat = fs.statSync(srcPath);
+      if (stat.isDirectory()) {
+        if (!fs.existsSync(destPath)) {
+          fs.mkdirSync(destPath, { recursive: true });
+        }
+        const subItems = fs.readdirSync(srcPath);
+        subItems.forEach(subItem => {
+          const subSrcPath = path.join(srcPath, subItem);
+          const subDestPath = path.join(destPath, subItem);
+          if (fs.statSync(subSrcPath).isFile() && !fs.existsSync(subDestPath)) {
+            fs.copyFileSync(subSrcPath, subDestPath);
+          }
+        });
+      } else if (stat.isFile() && !fs.existsSync(destPath)) {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    });
+  } catch (e) {}
+}
+
 // ========== macOS 特有配置 ==========
 function setupMacOS() {
   if (process.platform !== 'darwin') return;
@@ -631,6 +665,7 @@ function checkInApplications() {
 
 // ========== App 生命周期 ==========
 app.whenReady().then(() => {
+  migrateDataFromAsar();
   setupMacOS();
   createSplashWindow();
   setTimeout(() => {
